@@ -1,0 +1,23 @@
+{
+  "ageGate": {
+    "title": "Age Verification",
+    "description": "SameSky is an 18+ platform. Please verify your date of birth to continue.",
+    "dobRequired": "Date of birth is required",
+    "tooYoung": "You must be at least 15 years old to access this platform",
+    "confirm": "Confirm"
+  },
+  "navigation": {
+    "home": "Home",
+    "discover": "Discover",
+    "community": "Community",
+    "live": "Live",
+    "career": "Career",
+    "profile": "Profile"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success",
+    "logout": "Logout"
+  }
+}

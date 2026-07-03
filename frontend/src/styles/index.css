@@ -1,0 +1,110 @@
+:root {
+  /* Primary Colors */
+  --blush-pink: #F9D5E5;
+  --lavender: #C9B8E8;
+  --warm-cream: #FDF6EC;
+  
+  /* Accent Colors */
+  --dusty-rose: #D4849A;
+  --soft-violet: #9B7FC7;
+  --shimmering-gold: #D4AF37;
+  
+  /* Neutral */
+  --text-dark: #2D2D2D;
+  --text-light: #666666;
+  --border-light: #E8E8E8;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--warm-cream);
+  color: var(--text-dark);
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+/* Age Gate Styles */
+.age-gate-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--blush-pink) 0%, var(--lavender) 100%);
+}
+
+.age-gate-modal {
+  background: white;
+  padding: 3rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+}
+
+.age-gate-title {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: var(--dusty-rose);
+}
+
+.age-gate-description {
+  color: var(--text-light);
+  margin-bottom: 2rem;
+  font-size: 0.95rem;
+}
+
+.age-gate-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid var(--blush-pink);
+  border-radius: 6px;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  font-family: 'Inter', sans-serif;
+}
+
+.age-gate-input:focus {
+  outline: none;
+  border-color: var(--lavender);
+  box-shadow: 0 0 0 3px rgba(201, 184, 232, 0.1);
+}
+
+.age-gate-error {
+  color: #e74c3c;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.age-gate-button {
+  width: 100%;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, var(--dusty-rose) 0%, var(--soft-violet) 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.age-gate-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(212, 132, 154, 0.3);
+}
+
+.age-gate-button:active {
+  transform: translateY(0);
+}

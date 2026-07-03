@@ -1,0 +1,42 @@
+{
+  "name": "samesky-frontend",
+  "version": "1.0.0",
+  "description": "SameSky Girls' Love Platform Frontend",
+  "private": true,
+  "dependencies": {
+    "@types/node": "^20.3.1",
+    "@types/react": "^18.2.6",
+    "@types/react-dom": "^18.2.4",
+    "axios": "^1.4.0",
+    "i18next": "^23.2.0",
+    "i18next-browser-languagedetector": "^7.1.0",
+    "i18next-http-backend": "^2.3.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-i18next": "^13.2.0",
+    "react-router-dom": "^6.11.2",
+    "react-scripts": "5.0.1",
+    "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "lint": "eslint src --ext .ts,.tsx",
+    "format": "prettier --write src"
+  },
+  "eslintConfig": {
+    "extends": ["react-app"]
+  },
+  "browserslist": {
+    "production": [">0.2%", "not dead", "not op_mini all"],
+    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
+  },
+  "devDependencies": {
+    "@types/react-router-dom": "^5.3.3",
+    "autoprefixer": "^10.4.14",
+    "postcss": "^8.4.24",
+    "tailwindcss": "^3.3.2"
+  }
+}
