@@ -1,0 +1,625 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model
+model User {
+  id                    String   @id @default(cuid())
+  name                  String
+  email                 String   @unique
+  emailVerified         Boolean  @default(false)
+  ageVerified           Boolean  @default(false)
+  dob                   DateTime
+  password              String   // hashed
+  avatar_url            String?
+  bio                   String?
+  countryCode           String   // ISO 2-letter format
+  preferredLanguage     String   @default("en")
+  premiumStatus         Boolean  @default(false)
+  subscriptionExpiry    DateTime?
+  subscriptionDurationMonths Int?
+  loyaltyBadge          String?  // gl_fan, gl_supporter, loyal_fan, gl_legend
+  profileVisibility     String   @default("public") // public or private
+  aiViolationStrikes    Int      @default(0)
+  fanArtUploadBanned    Boolean  @default(false)
+  coinBalance           BigInt   @default(0)
+  role                  String   @default("free_verified") // free_verified, premium_verified, actress_creator, moderator, admin, super_admin, banned
+  blockedUsers          String[] @default([])
+  mutedUsers            String[] @default([])
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  actressProfile        ActressProfile?
+  watchlistEntries      WatchlistEntry[]
+  reviews               Review[]
+  fanArt                FanArt[]
+  posts                 Post[]
+  comments              Comment[]
+  follows               Follow[]
+  coinTransactions      CoinTransaction[]
+  subscriptions         SubscriptionInstance[]
+  raffleEntries         RaffleEntry[]
+  fanLetters            FanLetter[]
+  contentSubmissions    ContentSubmission[]
+  raffleWins            RaffleWin[]
+  dmThreadsA            DMThread[] @relation("participant_a")
+  dmThreadsB            DMThread[] @relation("participant_b")
+  directMessages        DirectMessage[]
+  withdrawalRequests    WithdrawalRequest[]
+  creatorApplication    CreatorApplication?
+  notifications         Notification[]
+  reports               Report[]
+  createdContent        ContentEntry[] @relation("submittedBy")
+}
+
+// Actress/Creator Profile
+model ActressProfile {
+  id                    String   @id @default(cuid())
+  user_ref              String   @unique
+  type                  String   // official or verified_creator
+  display_name          String
+  photo_url             String?
+  bio                   String?
+  nationality           String?
+  career_timeline       Json?    // Array of { date, event_title, description }
+  roles                 Json?    // Array of { production_title, character_name, year }
+  awards                String[] @default([])
+  upcoming_projects     String[] @default([])
+  social_handles        Json?    // Map of social platforms
+  affiliated_content    String[] @default([])
+  ambassador_brands     String[] @default([])
+  fan_letter_pool_open  Boolean  @default(false)
+  live_stream_enabled   Boolean  @default(false)
+  total_coins_earned    BigInt   @default(0)
+  pending_withdrawal_balance Decimal @default(0)
+  follower_count        BigInt   @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  user                  User     @relation(fields: [user_ref], references: [id], onDelete: Cascade)
+  designDirectiveRaffles DesignDirectiveRaffle[]
+  personalItemRaffles   PersonalItemRaffle[]
+  fanMeetTicketRaffles  FanMeetTicketRaffle[]
+  fanLetters            FanLetter[]
+  liveStreams           LiveStream[]
+  designDirectiveRaffleEntries DesignDirectiveRaffleEntry[]
+  personalItemRaffleEntries PersonalItemRaffleEntry[]
+}
+
+// Content Entry (Media)
+model ContentEntry {
+  id                    String   @id @default(cuid())
+  title                 String
+  type                  String   // series, movie, short_drama, novel, ship
+  country               String
+  year                  Int
+  genres                String[] @default([])
+  synopsis              String?
+  coverImageUrl         String?
+  trailerUrl            String?
+  contentRating         String   // sfw, mature, explicit
+  streamingLinks        Json?    // Array of { platformName, url, regions }
+  cast                  Json?    // Array of { name, role, photoUrl, socialHandles }
+  shipProfiles          Json?    // Array of { shipName, actressARef, actressBRef }
+  episodeList           Json?    // Array of { episodeNumber, title, runtimeMinutes }
+  trivia                String[] @default([])
+  awards                String[] @default([])
+  fanRatingAvg          Float    @default(0)
+  starRatingCount       BigInt   @default(0)
+  status                String   @default("draft") // draft, published, archived
+  submitted_by          String
+  isFeatured            Boolean  @default(false)
+  relatedContentRefs    String[] @default([])
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  submitter             User     @relation("submittedBy", fields: [submitted_by], references: [id], onDelete: Cascade)
+  watchlistEntries      WatchlistEntry[]
+  reviews               Review[]
+  fanArt                FanArt[]
+}
+
+// Watchlist Entry
+model WatchlistEntry {
+  id                    String   @id @default(cuid())
+  user_ref              String
+  content_ref           String
+  status                String   // want_to_watch, watching, completed, dropped
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  user                  User     @relation(fields: [user_ref], references: [id], onDelete: Cascade)
+  content               ContentEntry @relation(fields: [content_ref], references: [id], onDelete: Cascade)
+
+  @@unique([user_ref, content_ref])
+}
+
+// Review
+model Review {
+  id                    String   @id @default(cuid())
+  content_ref           String
+  user_ref              String
+  star_rating           Int
+  text_body             String?
+  timestamp             DateTime @default(now())
+  status                String   @default("approved") // pending, approved, rejected
+
+  // Relations
+  content               ContentEntry @relation(fields: [content_ref], references: [id], onDelete: Cascade)
+  user                  User     @relation(fields: [user_ref], references: [id], onDelete: Cascade)
+
+  @@index([content_ref])
+  @@index([user_ref])
+}
+
+// Fan Art
+model FanArt {
+  id                    String   @id @default(cuid())
+  content_ref           String
+  author_ref            String
+  image_url             String
+  title                 String
+  contentRating         String   // sfw, mature, explicit
+  likes_count           BigInt   @default(0)
+  status                String   @default("pending") // pending, approved, ai_rejected
+  ai_detection_result   Json?    // confidence scores from AI scanner
+  timestamp             DateTime @default(now())
+
+  // Relations
+  content               ContentEntry @relation(fields: [content_ref], references: [id], onDelete: Cascade)
+  author                User     @relation(fields: [author_ref], references: [id], onDelete: Cascade)
+
+  @@index([content_ref])
+  @@index([author_ref])
+}
+
+// Social Post
+model Post {
+  id                    String   @id @default(cuid())
+  author_ref            String
+  body                  String
+  image_url             String?
+  hashtags              String[] @default([])
+  contentRating         String   // sfw, mature, explicit
+  likes_count           BigInt   @default(0)
+  repost_count          BigInt   @default(0)
+  timestamp             DateTime @default(now())
+
+  // Relations
+  author                User     @relation(fields: [author_ref], references: [id], onDelete: Cascade)
+  comments              Comment[]
+
+  @@index([author_ref])
+  @@index([hashtags])
+}
+
+// Comment
+model Comment {
+  id                    String   @id @default(cuid())
+  post_ref              String
+  author_ref            String
+  body                  String
+  timestamp             DateTime @default(now())
+
+  // Relations
+  post                  Post     @relation(fields: [post_ref], references: [id], onDelete: Cascade)
+  author                User     @relation(fields: [author_ref], references: [id], onDelete: Cascade)
+
+  @@index([post_ref])
+  @@index([author_ref])
+}
+
+// Direct Message Thread
+model DMThread {
+  id                    String   @id @default(cuid())
+  participant_a_ref     String
+  participant_b_ref     String
+  updated_at            DateTime @updatedAt
+
+  // Relations
+  participant_a         User     @relation("participant_a", fields: [participant_a_ref], references: [id], onDelete: Cascade)
+  participant_b         User     @relation("participant_b", fields: [participant_b_ref], references: [id], onDelete: Cascade)
+  messages              DirectMessage[]
+
+  @@unique([participant_a_ref, participant_b_ref])
+}
+
+// Direct Message
+model DirectMessage {
+  id                    String   @id @default(cuid())
+  thread_ref            String
+  sender_ref            String
+  body                  String
+  timestamp             DateTime @default(now())
+  read_status           Boolean  @default(false)
+
+  // Relations
+  thread                DMThread @relation(fields: [thread_ref], references: [id], onDelete: Cascade)
+  sender                User     @relation(fields: [sender_ref], references: [id], onDelete: Cascade)
+
+  @@index([thread_ref])
+  @@index([sender_ref])
+}
+
+// Follow
+model Follow {
+  id                    String   @id @default(cuid())
+  follower_user_ref     String
+  actress_profile_ref   String
+  notification_prefs    Json?    // { goes_live, creates_raffle, posts, opens_fan_letter_pool, announces_event }
+  createdAt             DateTime @default(now())
+
+  // Relations
+  follower              User     @relation(fields: [follower_user_ref], references: [id], onDelete: Cascade)
+  actress               ActressProfile @relation(fields: [actress_profile_ref], references: [id], onDelete: Cascade)
+
+  @@unique([follower_user_ref, actress_profile_ref])
+}
+
+// Fan Letter
+model FanLetter {
+  id                    String   @id @default(cuid())
+  sender_ref            String
+  actress_ref           String
+  subject               String
+  body                  String    // max 1000 words
+  timestamp             DateTime @default(now())
+  pool_status           String   // active_in_pool, drawn_winner, archived
+
+  // Relations
+  sender                User     @relation(fields: [sender_ref], references: [id], onDelete: Cascade)
+  actress               ActressProfile @relation(fields: [actress_ref], references: [id], onDelete: Cascade)
+
+  @@index([actress_ref])
+}
+
+// Coin Transaction Ledger
+model CoinTransaction {
+  id                    String   @id @default(cuid())
+  user_ref              String
+  type                  String   // purchase, spend, earn, withdrawal, bonus, raffle_entry, raffle_refund
+  amount                BigInt
+  target_ref            String?  // polymorphic reference
+  timestamp             DateTime @default(now())
+
+  // Relations
+  user                  User     @relation(fields: [user_ref], references: [id], onDelete: Cascade)
+
+  @@index([user_ref])
+  @@index([timestamp])
+}
+
+// Subscription Config
+model SubscriptionConfig {
+  id                    String   @id @default(cuid())
+  duration_months       Int      @unique
+  price_usd             Decimal
+  bonus_coins           Int
+  loyalty_badge_name    String
+  createdAt             DateTime @default(now())
+
+  // Relations
+  instances             SubscriptionInstance[]
+}
+
+// Subscription Instance
+model SubscriptionInstance {
+  id                    String   @id @default(cuid())
+  user_ref              String
+  stripe_customer_id    String?
+  stripe_subscription_id String?
+  duration_months       Int
+  status                String   // active, past_due, canceled, unpaid
+  current_period_end    DateTime
+  auto_renew            Boolean  @default(true)
+  config_id             String
+  createdAt             DateTime @default(now())
+
+  // Relations
+  user                  User     @relation(fields: [user_ref], references: [id], onDelete: Cascade)
+  config                SubscriptionConfig @relation(fields: [config_id], references: [id])
+}
+
+// Design Directive Raffle
+model DesignDirectiveRaffle {
+  id                    String   @id @default(cuid())
+  actress_ref           String
+  brand_name            String
+  merch_type            String
+  design_brief          String
+  design_options        Json?    // Array of 3-5 options
+  proposed_live_session_date_range String?
+  coin_cost_per_paid_entry Int
+  opens_at              DateTime
+  closes_at             DateTime
+  status                String   // draft, pending_actress_approval, live, drawing, completed, rejected, cancelled
+  actress_approval_note String?
+  winner_user_ref       String?
+  winner_notified_of_options Boolean @default(false)
+  winner_chosen_option  String?
+  live_stream_ref       String?
+  session_cancelled     Boolean  @default(false)
+  session_resolution_notes String?
+  fulfillment_status    String   // pending, design_in_progress, produced, shipped, delivered
+  winner_shipping_address_encrypted String?
+  production_cost_usd   Decimal?
+  post_session_design_photo_url String?
+  is_one_of_a_kind      Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  actress               ActressProfile @relation(fields: [actress_ref], references: [id], onDelete: Cascade)
+  entries               DesignDirectiveRaffleEntry[]
+  raffleWin             RaffleWin?
+
+  @@index([actress_ref])
+  @@index([status])
+}
+
+// Design Directive Raffle Entry
+model DesignDirectiveRaffleEntry {
+  id                    String   @id @default(cuid())
+  raffle_ref            String
+  user_ref              String
+  actress_ref           String
+  free_entry            Boolean  @default(false)
+  paid_entries_count    Int      @default(0)
+  coins_spent           Int      @default(0)
+
+  // Relations
+  raffle                DesignDirectiveRaffle @relation(fields: [raffle_ref], references: [id], onDelete: Cascade)
+  user                  User     @relation(fields: [user_ref], references: [id], onDelete: Cascade)
+  actress               ActressProfile @relation(fields: [actress_ref], references: [id], onDelete: Cascade)
+
+  @@unique([raffle_ref, user_ref])
+}
+
+// Personal Item Raffle
+model PersonalItemRaffle {
+  id                    String   @id @default(cuid())
+  actress_ref           String
+  item_type             String   // clothing, accessory, gl_drama_prop
+  item_name             String
+  item_description      String
+  item_photos           String[] @default([])
+  estimated_real_value_usd Decimal
+  live_wear_session_date DateTime
+  coin_cost_per_paid_entry Int
+  opens_at              DateTime
+  closes_at             DateTime
+  status                String   // draft, pending_actress_approval, live, drawing, completed, rejected, cancelled
+  actress_approval_note String?
+  total_entries         BigInt   @default(0)
+  winner_user_ref       String?
+  live_stream_ref       String?
+  session_cancelled     Boolean  @default(false)
+  session_resolution_notes String?
+  fulfillment_status    String   // pending, shipped, delivered
+  winner_shipping_address_encrypted String?
+  platform_cost_usd     Decimal  @default(0)
+  post_session_celebration_photo_url String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  actress               ActressProfile @relation(fields: [actress_ref], references: [id], onDelete: Cascade)
+  entries               PersonalItemRaffleEntry[]
+  raffleWin             RaffleWin?
+
+  @@index([actress_ref])
+  @@index([status])
+}
+
+// Personal Item Raffle Entry
+model PersonalItemRaffleEntry {
+  id                    String   @id @default(cuid())
+  raffle_ref            String
+  user_ref              String
+  actress_ref           String
+  free_entry            Boolean  @default(false)
+  paid_entries_count    Int      @default(0)
+  coins_spent           Int      @default(0)
+
+  // Relations
+  raffle                PersonalItemRaffle @relation(fields: [raffle_ref], references: [id], onDelete: Cascade)
+  user                  User     @relation(fields: [user_ref], references: [id], onDelete: Cascade)
+  actress               ActressProfile @relation(fields: [actress_ref], references: [id], onDelete: Cascade)
+
+  @@unique([raffle_ref, user_ref])
+}
+
+// Fan Meet Ticket Raffle
+model FanMeetTicketRaffle {
+  id                    String   @id @default(cuid())
+  actress_ref           String
+  event_name            String
+  event_country         String   // ISO 2-letter code
+  event_date            DateTime
+  official_ticket_price_usd Decimal
+  platform_cost_usd     Decimal  @default(0)
+  partner_event_url     String?
+  digital_ticket_code   String   // encrypted
+  coin_cost_per_entry   Int
+  opens_at              DateTime
+  closes_at             DateTime
+  status                String   // draft, live, drawing, completed, cancelled
+  total_entries         BigInt   @default(0)
+  winner_user_ref       String?
+  ticket_delivered      Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  actress               ActressProfile @relation(fields: [actress_ref], references: [id], onDelete: Cascade)
+  raffleWin             RaffleWin?
+}
+
+// Generic Raffle Entry
+model RaffleEntry {
+  id                    String   @id @default(cuid())
+  user_ref              String
+  raffle_id             String
+  raffle_type           String   // design_directive, personal_item, fan_meet, merch, fan_letter
+  free_entry            Boolean  @default(false)
+  paid_entries_count    Int      @default(0)
+  coins_spent           Int      @default(0)
+
+  // Relations
+  user                  User     @relation(fields: [user_ref], references: [id], onDelete: Cascade)
+
+  @@index([user_ref])
+  @@index([raffle_id])
+}
+
+// Raffle Win (Generic)
+model RaffleWin {
+  id                    String   @id @default(cuid())
+  winner_user_ref       String
+  raffle_type           String   // design_directive, personal_item, fan_meet
+  design_directive_raffle_id String? @unique
+  personal_item_raffle_id String? @unique
+  fan_meet_ticket_raffle_id String? @unique
+  createdAt             DateTime @default(now())
+
+  // Relations
+  winner                User     @relation(fields: [winner_user_ref], references: [id], onDelete: Cascade)
+  designDirectiveRaffle DesignDirectiveRaffle? @relation(fields: [design_directive_raffle_id], references: [id], onDelete: Cascade)
+  personalItemRaffle    PersonalItemRaffle? @relation(fields: [personal_item_raffle_id], references: [id], onDelete: Cascade)
+  fanMeetTicketRaffle   FanMeetTicketRaffle? @relation(fields: [fan_meet_ticket_raffle_id], references: [id], onDelete: Cascade)
+}
+
+// Live Stream
+model LiveStream {
+  id                    String   @id @default(cuid())
+  actress_ref           String
+  raffle_ref            String?
+  raffle_type           String?  // none, fan_letter, design_directive, personal_item
+  title                 String
+  scheduled_at          DateTime
+  status                String   // scheduled, live, ended, disconnected
+  viewer_count          BigInt   @default(0)
+  vod_url               String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  actress               ActressProfile @relation(fields: [actress_ref], references: [id], onDelete: Cascade)
+
+  @@index([actress_ref])
+  @@index([status])
+}
+
+// Gift Master
+model Gift {
+  id                    String   @id @default(cuid())
+  name                  String
+  coin_cost             Int
+  tier                  String   // small, medium, large
+  animation_trigger_key String
+  image_url             String?
+  createdAt             DateTime @default(now())
+}
+
+// Sticker Pack
+model StickerPack {
+  id                    String   @id @default(cuid())
+  pack_name             String
+  coin_cost             Int
+  sticker_asset_urls    String[] @default([])
+  createdAt             DateTime @default(now())
+}
+
+// Withdrawal Request
+model WithdrawalRequest {
+  id                    String   @id @default(cuid())
+  actress_ref           String
+  coin_amount           BigInt
+  cash_equivalent_usd   Decimal
+  platform_revenue_cut_usd Decimal
+  payout_method_snapshot Json?
+  status                String   @default("pending") // pending, processed, rejected
+  processed_at          DateTime?
+  createdAt             DateTime @default(now())
+
+  // Relations
+  actress               ActressProfile @relation(fields: [actress_ref], references: [id], onDelete: Cascade)
+
+  @@index([actress_ref])
+  @@index([status])
+}
+
+// Content Submission
+model ContentSubmission {
+  id                    String   @id @default(cuid())
+  submitter_ref         String
+  proposed_data         Json
+  status                String   @default("pending") // pending, approved, rejected
+  moderator_note        String?
+  reviewed_by           String?
+  createdAt             DateTime @default(now())
+
+  // Relations
+  submitter             User     @relation(fields: [submitter_ref], references: [id], onDelete: Cascade)
+
+  @@index([submitter_ref])
+  @@index([status])
+}
+
+// Creator Application
+model CreatorApplication {
+  id                    String   @id @default(cuid())
+  user_ref              String   @unique
+  legal_name            String
+  portfolio_links       String[] @default([])
+  verification_notes    String?
+  status                String   @default("pending") // pending, approved, rejected
+  processed_by          String?
+  createdAt             DateTime @default(now())
+
+  // Relations
+  user                  User     @relation(fields: [user_ref], references: [id], onDelete: Cascade)
+}
+
+// Notification
+model Notification {
+  id                    String   @id @default(cuid())
+  user_ref              String
+  type                  String   // live_alert, raffle_win, dm_received, strike_alert, system_broadcast
+  payload               Json?
+  read                  Boolean  @default(false)
+  timestamp             DateTime @default(now())
+
+  // Relations
+  user                  User     @relation(fields: [user_ref], references: [id], onDelete: Cascade)
+
+  @@index([user_ref])
+  @@index([timestamp])
+}
+
+// Report System
+model Report {
+  id                    String   @id @default(cuid())
+  reporter_ref          String
+  reported_target_id    String
+  target_type           String   // user, post, comment, fan_art, direct_message
+  reason                String
+  status                String   @default("open") // open, under_review, resolved_no_action, resolved_action_taken
+  resolved_by           String?
+  createdAt             DateTime @default(now())
+
+  // Relations
+  reporter              User     @relation(fields: [reporter_ref], references: [id], onDelete: Cascade)
+}
